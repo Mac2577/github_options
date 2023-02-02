@@ -62,4 +62,6 @@ for org in enterprise_orgs:
 # Write the data to a CSV file
 with open("repo_data.csv", "w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["Org", "Repo", "Last Updated", "Description", "URL", "Archived", "Author Name", "Author Email", "
+    writer.writerow(["Org", "Repo", "Last Updated", "Description", "URL", "Archived", "Author Name", "Author Email", "Last Commit Date"])
+    for row in data:
+        writer.writerow(row)
