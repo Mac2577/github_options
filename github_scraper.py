@@ -43,21 +43,22 @@ for org in enterprise_orgs:
             description = repo_details.get("description", "")
 
             # Get the Github URL for the repo
-            html_url = repo_details["html_url"]
+            html_url = repo_details.get("html_url", "")
 
             # Check if the repo is archived
-            archived = repo_details["archived"]
+            archived = repo_details.get("archived", False)
 
             # Get the author information
-            commit_url = repo_details["commits_url"].split("{")[0] + "?per_page=1"
+            commit_url = repo_details.get("commits_url", "").split("{")[0] + "?per_page=1"
             commit_response = requests.get(commit_url, headers=headers)
             commit_details = commit_response.json()
-            author_name = commit_details[0]["commit"]["author"]["name"]
-            author_email = commit_details[0]["commit"]["author"]["email"]
-            last_commit_date = commit_details[0]["commit"]["author"]["date"]
+            author_name = commit_details[0]["commit"]["author"]["name"] if commit_details else ""
+            author_email = commit_details[0]["commit"]["author"]["email"] if commit_details else ""
+            last_commit_date = commit_details[0]["commit"]["author"]["date"] if commit_details else ""
 
             # Add the repo information to the data list
             data.append([org, repo["name"], repo["pushed_at"], description, html_url, archived, author_name, author_email, last_commit_date])
+
 
 # Write the data to a CSV file
 with open("repo_data.csv", "w", newline="") as file:
