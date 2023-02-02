@@ -23,10 +23,14 @@ data = []
 # Loop through each enterprise org
 for org in enterprise_orgs:
     # Get the list of repos for the org
-    repos_url = f"https://api.github.com/orgs/{org}/repos"
+    repos_url = f"https://api.github.com/orgs/{org}/repos?per_page=100"
     repos_response = requests.get(repos_url, headers=headers)
     repos = repos_response.json()
 
+    while "next" in repos_response.links.keys():
+        repos_response = requests.get(repos_response.links["next"]["url"], headers=headers)
+        repos += repos_response.json()
+        
     # Loop through each repo
     for repo in repos:
         # Check if the repo was updated within the last 4 months
@@ -45,7 +49,7 @@ for org in enterprise_orgs:
             archived = repo_details["archived"]
 
             # Get the author information
-            commit_url = repo_details["commits_url"].split("{")[0]
+            commit_url = repo_details["commits_url"].split("{")[0] + "?per_page=1"
             commit_response = requests.get(commit_url, headers=headers)
             commit_details = commit_response.json()
             author_name = commit_details[0]["commit"]["author"]["name"]
@@ -58,5 +62,4 @@ for org in enterprise_orgs:
 # Write the data to a CSV file
 with open("repo_data.csv", "w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["Org", "Repo", "Last Updated", "Description", "URL", "Archived", "Author Name", "Author Email", "Last Commit Date"])
-    writer.writerows(data)
+    writer.writerow(["Org", "Repo", "Last Updated", "Description", "URL", "Archived", "Author Name", "Author Email", "
