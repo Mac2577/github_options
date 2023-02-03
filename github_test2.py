@@ -1,64 +1,57 @@
-import requests
 import csv
-from getpass import getpass
+import requests
+import json
+from datetime import datetime, timedelta
 
-# GitHub API endpoint to get a list of enterprise orgs
-enterprise_orgs_url = "https://api.github.com/orgs"
+# API endpoint for getting the list of orgs
+enterprise_orgs_url = "https://hostname/api/v3/orgs"
 
-# GitHub API endpoint to get a list of repos for a specific org
-repos_url = "https://api.github.com/orgs/{}/repos"
+# API endpoint for getting the list of repos for an org
+repos_url = "https://hostname/api/v3/repos/orgs/{org}?per_page=100"
 
-# Request headers
+# API endpoint for getting the details of a repo
+repo_url = "https://hostname/api/v3/repos/{owner}/{repo}"
+
+# API request headers
 headers = {
+    "Authorization": "token <your_access_token>",
     "Accept": "application/vnd.github+json",
-    "Authorization": f"token {getpass('Enter your GitHub personal access token: ')}"
 }
 
-# CSV file to store the repo information
-filename = "repos.csv"
+# Get the list of orgs
+response = requests.get(enterprise_orgs_url, headers=headers)
 
-# Open the CSV file for writing
-with open(filename, "w", newline="") as csvfile:
-    # Create a CSV writer
-    writer = csv.writer(csvfile)
+if response.status_code == 200:
+    # Get the list of orgs
+    orgs = response.json()
 
-    # Write the header row to the CSV file
-    writer.writerow(["Repo Name", "Description", "URL", "Archived", "Author", "Author Email", "Author Type"])
+    # Open a CSV file for writing
+    with open("repos.csv", "w", newline="") as file:
+        writer = csv.writer(file)
 
-    # Get the list of enterprise orgs
-    response = requests.get(enterprise_orgs_url, headers=headers)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Get the list of orgs
-        orgs = response.json()
+        # Write the header row
+        writer.writerow(["Org", "Repo", "Description", "URL", "Archived", "Author", "Email", "Last Commit Date"])
 
         # Loop through each org
         for org in orgs:
+            org_name = org["login"]
+            org_repos_url = repos_url.format(org=org_name)
+
             # Get the list of repos for the org
-            response = requests.get(repos_url.format(org["login"]), headers=headers)
+            org_repos = requests.get(org_repos_url, headers=headers).json()
 
-            # Check if the request was successful
-            if response.status_code == 200:
-                # Get the list of repos
-                repos = response.json()
+            # Loop through each repo
+            for repo in org_repos:
+                repo_name = repo["name"]
+                repo_details_url = repo_url.format(owner=org_name, repo=repo_name)
 
-                # Loop through each repo
-                for repo in repos:
-                    # Get the repo information
-                    repo_info = [
-                        repo["name"],
-                        repo["description"] if "description" in repo else "",
-                        repo["html_url"],
-                        repo["archived"],
-                        repo["owner"]["login"],
-                        repo["owner"]["email"] if "email" in repo["owner"] else "",
-                        repo["owner"]["type"],
-                    ]
+                # Get the details of the repo
+                repo_details = requests.get(repo_details_url, headers=headers).json()
 
-                    # Write the repo information to the CSV file
-                    writer.writerow(repo_info)
-            else:
-                print(f"Error: Failed to get repos for org {org['login']}. Status code: {response.status_code}")
-    else:
-        print(f"Error: Failed to get enterprise orgs. Status code: {response.status_code}")
+                # Write the repo data to the CSV file
+                writer.writerow([org_name, repo_name, repo_details.get("description", ""), repo_details["html_url"],
+                                 repo_details["archived"], repo_details["owner"]["login"], repo_details["owner"]["email"],
+                                 repo_details["pushed_at"]])
+else:
+    print(f"Error: Failed to get enterprise orgs. Status code: {response.status_code}")
+    print(f"Response content: {response.content}")
