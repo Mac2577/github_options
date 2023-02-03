@@ -49,9 +49,9 @@ if response.status_code == 200:
                 repo_details = requests.get(repo_details_url, headers=headers).json()
 
                 # Write the repo data to the CSV file
-                writer.writerow([org_name, repo_name, repo_details.get("description", ""), repo_details["html_url"],
-                                 repo_details["archived"], repo_details["owner"]["login"], repo_details["owner"]["email"],
-                                 repo_details["pushed_at"]])
+                writer.writerow([org_name, repo_name, repo_details.get("description", ""), repo_details.get("html_url", ""),
+                                 repo_details.get("archived", False), repo_details.get("owner", {}).get("login", ""),
+                                 repo_details.get("owner", {}).get("email", ""), repo_details.get("pushed_at", "")])
 else:
     print(f"Error: Failed to get enterprise orgs. Status code: {response.status_code}")
     print(f"Response content: {response.content}")
