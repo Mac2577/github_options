@@ -33,8 +33,11 @@ for org in enterprise_orgs:
         
     # Loop through each repo
     for repo in repos:
+
+        pushed_at = datetime.strptime(repo["pushed_at"], "%Y-%m-%dT%H:%M:%SZ")
+
         # Check if the repo was updated within the last 4 months
-        if repo["pushed_at"] >= four_months_ago:
+        if pushed_at >= four_months_ago:
             repo_url = repo["url"]
             repo_response = requests.get(repo_url, headers=headers)
             repo_details = repo_response.json()
